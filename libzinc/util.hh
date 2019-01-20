@@ -10,7 +10,7 @@ namespace zinc {
 
 namespace morton {
 
-static uint64_t fast_log2(const uint64_t x) {
+static inline uint64_t fast_log2(const uint64_t x) {
     assert(x != 0);
     return sizeof(x) * 8 - 1 - __builtin_clzll(x);
 }

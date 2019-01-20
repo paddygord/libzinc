@@ -156,7 +156,31 @@ struct AABB {
     //https://raima.com/wp-content/uploads/COTS_embedded_database_solving_dynamic_pois_2012.pdf
     //http://cppedinburgh.uk/slides/201603-zcurves.pdf
     std::pair<morton_code<Dimension, BitsPerDimension>, morton_code<Dimension, BitsPerDimension>> morton_get_next_address();
+
+    detail::interval<Dimension, BitsPerDimension> get_first_interval() const;
 };
+
+template<uint32_t Dimension, uint32_t BitsPerDimension>
+detail::interval<Dimension, BitsPerDimension> AABB<Dimension, BitsPerDimension>::get_first_interval() const {
+    assert(max >= min);
+    uint32_t min_x, min_y, max_x, max_y, x, y;
+    auto pack = morton_code<Dimension, BitsPerDimension>::decode({min});
+    min_x = pack[0];
+    min_y = pack[1];
+    pack = morton_code<Dimension, BitsPerDimension>::decode({max});
+    max_x = pack[0];
+    max_y = pack[1];
+    auto m = min;
+    pack = morton_code<Dimension, BitsPerDimension>::decode({m});
+    x = pack[0];
+    y = pack[1];
+
+    uint32_t begin_align = min == 0 ? BitsPerDimension : __builtin_ctzll(m) / Dimension;
+    begin_align = std::max(begin_align, __builtin_ctzll(m ^ max) / Dimension);
+    uint32_t end_align = __builtin_ctzll(max_x + 1);
+    auto end_code = morton_code<Dimension, BitsPerDimension>::encode({max_x, y + end_align});
+    return {m, end_code};
+}
 
 template<uint32_t Dimension, uint32_t BitsPerDimension>
 bool AABB<Dimension, BitsPerDimension>::is_morton_aligned() const {
