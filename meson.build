@@ -24,7 +24,7 @@ test('zinc-test', zinc_test)
 
 glfw_dep = dependency('glfw3')
 cairo_dep = dependency('cairo')
-cairo_test = executable('cairo-test', 'test/cairo-test.cc', include_directories: incdir, dependencies: [m_dep, cairo_dep, glfw_dep])
+cairo_test = executable('cairo-test', 'test/cairo-test.cc', include_directories: incdir, dependencies: [m_dep, cairo_dep, glfw_dep], install: true)
 test('cairo-test', cairo_test)
 
 install_subdir('libzinc', install_dir: 'include')
