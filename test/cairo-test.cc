@@ -117,7 +117,6 @@ int main() {
             cairo_stroke(cr);
         }
         cairo_gl_surface_swapbuffers(surface);
-        glfwSwapBuffers(window);
         glfwPollEvents();
     }
     cairo_destroy(cr);
