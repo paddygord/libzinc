@@ -1,13 +1,16 @@
 project('zinc', 'cpp',
-  #default_options: ['b_sanitize=address', 'b_lundef=false']
+  default_options: [
+    'warning_level=3',
+    'werror=true',
+    'cpp_std=c++17',
+    'b_sanitize=address', 'b_lundef=false'
+  ]
 )
 
 add_project_arguments(
   '-mbmi2',
-  '-Werror', '-Wall', '-Wextra', '-Wpedantic',
   '-Wno-unused-parameter', '-Wno-unused-but-set-variable', '-Wno-unused-variable',
   #'-fsanitize=implicit-conversion', '-fsanitize=integer', '-fsanitize=undefined',
-  '-std=c++17',
   language: 'cpp',
 )
 
