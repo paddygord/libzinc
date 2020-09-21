@@ -157,6 +157,18 @@ struct AABB {
     //http://cppedinburgh.uk/slides/201603-zcurves.pdf
     std::pair<morton_code<Dimension, BitsPerDimension>, morton_code<Dimension, BitsPerDimension>> morton_get_next_address();
 
+    bool contains(morton_code<Dimension, BitsPerDimension> m) {
+        auto m_c = m.decode(m);
+        auto min_c = min.decode(min);
+        auto max_c = max.decode(max);
+        for (size_t dim = 0; dim < Dimension; dim++) {
+            if (m_c[dim] < min_c[dim] || m_c[dim] >= max_c[dim]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     detail::interval<Dimension, BitsPerDimension> get_first_interval() const;
 };
 
