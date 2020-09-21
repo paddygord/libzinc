@@ -54,7 +54,8 @@ int main() {
         cairo_device_destroy(cairo_device);
         cr = cairo_create(surface);
     }
-    zinc::morton::AABB<2, 32> aabb = {0, 1024 * 3};
+    //zinc::morton::AABB<2, 32> aabb = {0, 1024 * 3};
+    zinc::morton::AABB<2, 32> aabb = {0, 1024 * 4 - 64};
     cairo_matrix_t screen_mat, world_mat;
     float scale = 16;
     cairo_get_matrix(cr, &screen_mat);
@@ -93,18 +94,55 @@ int main() {
         {
             cairo_set_matrix(cr, &world_mat);
 
-            uint32_t min_x, min_y, max_x, max_y;
-            std::array<uint32_t, 2> pack;
-            pack = morton_code<2, 32>::decode({aabb.min});
-            min_x = pack[0];
-            min_y = pack[1];
-            pack = morton_code<2, 32>::decode({aabb.max});
-            max_x = pack[0];
-            max_y = pack[1];
-            cairo_rectangle(cr, min_x, min_y, max_x - min_x, max_y - min_y);
+            auto min_c = morton_code<2, 32>::decode({aabb.min});
+            auto max_c = morton_code<2, 32>::decode({aabb.max});
+            cairo_rectangle(cr, min_c[0], min_c[1], max_c[0] - min_c[0], max_c[1] - min_c[1]);
 
             cairo_set_matrix(cr, &screen_mat);
             cairo_set_source_rgba(cr, 0.8, 0.9, 0.95, 0.5);
+            cairo_fill_preserve(cr);
+            cairo_set_source_rgb(cr, 0, 0, 0);
+            cairo_stroke(cr);
+
+            cairo_set_matrix(cr, &world_mat);
+            for (morton_code<2, 32> cur_z = aabb.min; cur_z < aabb.max;) {
+                morton_code<2, 32> next_z = cur_z + 1;
+                auto cur_c = cur_z.decode(cur_z);
+                auto next_c = next_z.decode(next_z);
+
+                if (false) {
+                    auto aabb_max_c = aabb.max.decode(aabb.max);
+                    decltype(aabb_max_c) out_crossing_c, in_crossing_c;
+                    uint32_t out_crossing_length = 1 << ctz(aabb_max_c[0]);
+                    out_crossing_c[0] = aabb_max_c[0] - 1;
+                    out_crossing_c[1] = cur_c[1] + out_crossing_length - 1;
+                    size_t dim_y = 1;
+                    uint32_t in_crossing_bits = dim_y + ctz(cur_c[1] + out_crossing_length);
+                    uint32_t in_crossing_length = 1 << in_crossing_bits;
+                    in_crossing_c[1] = cur_c[1] + out_crossing_length;
+                    in_crossing_c[0] = (aabb_max_c[0] >> in_crossing_bits) << in_crossing_bits;
+
+                    cairo_rectangle(cr, in_crossing_c[0], in_crossing_c[1], 1, 1);
+                    cairo_rectangle(cr, out_crossing_c[0], out_crossing_c[1], 1, 1);
+
+                    cur_z = cur_z.encode(in_crossing_c);
+                } else {
+                    //going out
+                    if (aabb.contains(cur_z) && !aabb.contains(next_z)) {
+                        cairo_rectangle(cr, cur_c[0], cur_c[1], 1, 1);
+                        cairo_rectangle(cr, next_c[0], next_c[1], 1, 1);
+                        printf("%lu\n", cur_z.data ^ next_z.data);
+                    }
+                    //coming in
+                    if (!aabb.contains(cur_z) && aabb.contains(next_z)) {
+                        cairo_rectangle(cr, next_c[0], next_c[1], 1, 1);
+                    }
+
+                    cur_z.data += 1;
+                }
+            }
+            cairo_set_matrix(cr, &screen_mat);
+            cairo_set_source_rgba(cr, 0.0, 0.8, 0.0, 0.5);
             cairo_fill_preserve(cr);
             cairo_set_source_rgb(cr, 0, 0, 0);
             cairo_stroke(cr);
@@ -112,17 +150,11 @@ int main() {
         {
             cairo_set_matrix(cr, &world_mat);
 
-            uint32_t min_x, min_y, max_x, max_y;
-            std::array<uint32_t, 2> pack;
             auto i = aabb.get_first_interval();
-            pack = morton_code<2, 32>::decode({i.start});
-            min_x = pack[0];
-            min_y = pack[1];
-            cairo_rectangle(cr, min_x, min_y, 1, 1);
-            pack = morton_code<2, 32>::decode({i.end});
-            max_x = pack[0];
-            max_y = pack[1];
-            cairo_rectangle(cr, max_x, max_y, 1, 1);
+            auto min = morton_code<2, 32>::decode({i.start});
+            cairo_rectangle(cr, min[0], min[1], 1, 1);
+            auto max = morton_code<2, 32>::decode({i.end});
+            cairo_rectangle(cr, max[0], max[1], 1, 1);
 
             cairo_set_matrix(cr, &screen_mat);
             cairo_set_source_rgba(cr, 0.8, 0.0, 0.0, 0.5);
