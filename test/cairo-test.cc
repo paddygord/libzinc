@@ -17,6 +17,20 @@
 
 #include <stdlib.h>
 
+template<typename T>
+size_t ctz(T t) {
+    if (t == 0) {
+        return std::numeric_limits<T>::digits;
+    }
+    if constexpr (sizeof(T) == sizeof(long long)) {
+        return __builtin_ctzll(t);
+    } else if constexpr (sizeof(T) == sizeof(long)) {
+        return __builtin_ctzl(t);
+    } else if constexpr (sizeof(T) == sizeof(unsigned)) {
+        return __builtin_ctz(t);
+    }
+}
+
 int main() {
     cairo_t *cr = NULL;
     cairo_surface_t *surface = NULL;
