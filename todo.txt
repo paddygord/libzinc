@@ -1,0 +1,71 @@
+https://en.wikipedia.org/wiki/UB-tree
+http://www.vldb.org/conf/2000/P263.pdf
+https://www.vision-tools.com/h-tropf/multidimensionalrangequery.pdf
+http://siret.ms.mff.cuni.cz/skopal/pub/new_rq.pdf
+
+
+
+
+x=16
+y=22
+
+x=0b10000
+y=0b10110
+m=0b1100101000
+
+dim_mul(y, x) = 2
+
+x += 1 << (ctz(y) * dim_mul(y, x))
+
+repeat 3 times
+
+x += 2
+
+
+
+"Integrating the UB-Tree into a Database System Kernel"
+nisp = cur + 1
+
+We then test if nisp is in the query box by bitwise comparing with the Z-values of ql and qh – we do not have to transform nisp back to Cartesian coordinates.
+During the comparison we also determine additional information for each dimension i:
+
+flag[i] =
+    -1 if nisp has fallen below the minimum of qb in dimension i
+    0 if nisp is in qb in dimension i
+    1 if nisp has exceeded the maximum of qb in dimension i
+outStep[i] =
+    the step in dimension i where qb has been left; infinity if nisp in qb in dimension i
+saveMin[i] =
+    the step in dimension i where the minimum has been exceeded
+saveMax[i] =
+    the step in dimension i where nisp has fallen below the maximum
+
+If nisp is in qb then we have already found our next intersection point.
+If not, we have to determine the bits we have to set to 1 and set to 0 to get the correct nisp.
+Let be outStep = min(outstep[i]), and d the corresponding dimension.
+We have to distinguish two cases: first, if flag[d] = -1 then we have found the bit changeBP = BP(d, outstep) that we can safely set to 1 such that nisp > cur.
+Second, if flag[d] = 1 then we have to find a lower bit position in nisp we can set to 1, because the bit specified by outstep has to be set to 0.
+In both cases the bits following the changed bit have to be adapted accordingly (see Figure 4-4).
+
+BP changeBP=BP(d,outstep);
+//we start with the minimal bit position that has to be changed
+if (flag[d] == 1) {
+    // we cannot set this bit to 1, therefore we have to find a lower bit position we can safely set
+    changeBP = max({bp | bp < changeBP and bp >= saveMax[Dim(bp)] and Val(nisp,bp) = 0}); //maximal bitposition that is save to set to 1
+    saveMin[DIM(changeBP)] = STEP(changeBP);
+    flag[DIM(changeBP)] = 0;
+}
+// now we can change the rest of the Z-value
+for (int i = 0; i < dimno; i++) { //for each dimension we determine how to change the bits
+    if (flag[i]>=0) {
+        // we have not fallen below the minimum in this dimension
+        if (changeBP > BP(i, saveMin[i])) {
+            "set all bits of dim with bit positions > changeBP to 0"
+        } else {
+            "set all bits of dim with bit positions > changeBP to the minimum of the query box in this dim"
+        }
+    } else {
+        // if we have fallen below the min in this dimension the lowest possible value is the min itself
+        "set the bits to the minimum of the query box in this dim"
+    }
+}
